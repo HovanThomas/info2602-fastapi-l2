@@ -4,6 +4,7 @@ from app.models import User
 from fastapi import Depends
 from sqlmodel import select
 from sqlalchemy.exc import IntegrityError
+from typing import Annotated
 
 cli = typer.Typer()
 
@@ -75,6 +76,33 @@ def delete_user(username: str):
         db.commit()
         print(f'{username} deleted')
 
+#Exercise 1
+@cli.command()
+def search(username: str, email: str):
+    with get_session() as db:
+        user = db.exec(select(User).where(User.username == username)).all()
+        if user:
+            print('User found')
+            print(f'({user.username}, {user.email})')
+            return 
+        users = db.exec(select(User).where(User.email == email)).all()
+        if users:
+            print(' User found')
+            print(f'({username}, {email})')
+            return
+        print(f'({username} or {email}) not found!')
+
+
+#Exercise 2
+@cli.command()
+def list_users(limit:Annotated[int, typer.Argument()] = 10, offset: Annotated[int, typer.Argument] = 0):
+    with get_session() as db:
+        listusers = db.exec(select(User).offset(offset).limit(limit)).all()
+        if not listusers:
+            print("No users found")
+            return
+        for user in listusers:
+            print(user)
 
 
 if __name__ == "__main__":
